@@ -15,12 +15,15 @@ def lamina_lluvia(device_name, dev_eui, fecha_ini, fecha_fin , ciclo):
     total = 0
     aumenta = 0
     promedio = 0
-    dia = fecha_ini.strftime("%d")
-    mes = fecha_ini.strftime("%B")
-    año = fecha_ini.strftime("%Y")
+    dia = fecha_ini.day
+    mes = fecha_ini.month
+    año = fecha_ini.year
     hora_ini="12:00:00 AM"
     hora_fin="11:59:59 PM"
-    st.write(device_name, dev_eui, fecha_ini, fecha_fin, ciclo)
+    fecha_inicial = datetime(año, mes, dia, 12, 00, 00).strftime("'%d-%B-%y %H:%M:%S AM'")
+    fecha_final = datetime(año, mes, dia, 11, 59, 59).strftime("'%d-%B-%y %H:%M:%S PM'")
+
+    st.write(fecha_inicial+ " "+fecha_final)
     print("")
 
 
