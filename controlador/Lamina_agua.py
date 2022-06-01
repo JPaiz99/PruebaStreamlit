@@ -11,20 +11,35 @@ import streamlit as st
 import numpy as np
 
 
-def lamina_lluvia(device_name, dev_eui, fecha_ini, fecha_fin , ciclo):
+def lamina_lluvia(device_name, dev_eui, fecha_ini, fecha_fin, ciclo):
     total = 0
     aumenta = 0
     promedio = 0
     dia = fecha_ini.day
     mes = fecha_ini.month
     año = fecha_ini.year
-    hora_ini="12:00:00 AM"
-    hora_fin="11:59:59 PM"
+    hora_ini = "12:00:00 AM"
+    hora_fin = "11:59:59 PM"
     fecha_inicial = datetime(año, mes, dia, 12, 00, 00).strftime("'%d-%B-%y %H:%M:%S AM'")
     fecha_final = datetime(año, mes, dia, 11, 59, 59).strftime("'%d-%B-%y %H:%M:%S PM'")
+    while aumenta < ciclo:
+        try:
+            conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
+            cursor2 = conn.cursor()
 
-    st.write(fecha_inicial+ " "+fecha_final)
-    print("")
+            sql2 = '''
+               SELECT data_lluvia FROM SDEUSR.data_pluviometros_lluvia_imsa
+                where  fk_dev_eui =''' + "'" + dev_eui + "'" + ''' and data_lluvia !=0
+                and  fecha_cap between ''' + fecha_inicial + '''  and ''' + fecha_final + '''
+            '''
+            cursor2.execute(sql2)
+            data2 = cursor2.fetchall()
+            aumenta = aumenta + 1
+        except cx_Oracle.Error as error:
+            print(error)
+
+    # st.write(fecha_inicial + " " + fecha_final)
+    # print("")
 
 
 def dispositivos(fecha_ini, fecha_fin, ciclo):
@@ -57,6 +72,8 @@ def dispositivos(fecha_ini, fecha_fin, ciclo):
         lamina_lluvia('str(dvn)', 'str(dve)', f, f2, c)
     except cx_Oracle.Error as error:
         print(error)
+        conn.close()
+    conn.close()
 
 
 def dibujarTabla():
