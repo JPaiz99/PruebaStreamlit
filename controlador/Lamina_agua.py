@@ -108,6 +108,14 @@ def dispositivos(fecha_ini, fecha_fin, ini_ciclo ,ciclo):
         newdf = df.transpose()
         st.dataframe(newdf)
         st.line_chart(ar)
+        csv = convert_df(df)
+
+        st.download_button(
+            label="Descargar como CSV",
+            data=csv,
+            file_name='lamina '+str(f.strftime("%B %Y"))+'.csv',
+            mime='text/csv',
+        )
         # st.write(ar)
     except cx_Oracle.Error as error:
         print(error)
@@ -115,8 +123,9 @@ def dispositivos(fecha_ini, fecha_fin, ini_ciclo ,ciclo):
     conn.close()
 
 
-def dibujarTabla():
-    return 0
+def convert_df(df):
+    # IMPORTANT: Cache the conversion to prevent computation on every rerun
+    return df.to_csv().encode('utf-8')
 
 
 def main():
@@ -136,5 +145,7 @@ def main():
     ciclo = d2.strftime("%d")
     ini_ciclo = d.strftime("%d")
     dispositivos(d, d2,int(ini_ciclo), int(ciclo))
+
+
     # st.write('inicial: ', fecha_ini)
     # st.write('Final: ', fecha_fin)
