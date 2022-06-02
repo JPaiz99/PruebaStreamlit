@@ -11,18 +11,22 @@ import streamlit as st
 import numpy as np
 
 
-def lamina_lluvia(device_name, dev_eui, fecha_ini, fecha_fin, ciclo):
+def lamina_lluvia(device_name, dev_eui, fecha_ini, ciclo):
     total = 0
-    aumenta = 0
     promedio = 0
     dia = fecha_ini.day
-    mes = fecha_ini.month
-    año = fecha_ini.year
-    hora_ini = "12:00:00 AM"
-    hora_fin = "11:59:59 PM"
-    fecha_inicial = datetime(año, mes, dia, 12, 00, 00).strftime("'%d-%B-%y %H:%M:%S AM'")
-    fecha_final = datetime(año, mes, dia, 11, 59, 59).strftime("'%d-%B-%y %H:%M:%S PM'")
-    while aumenta < ciclo:
+    contador = 0
+    ar = []
+    while dia <= ciclo:
+        mes = fecha_ini.month
+        año = fecha_ini.year
+        fecha_inicial = datetime(año, mes, dia, 12, 00, 00).strftime("'%d-%B-%y %H:%M:%S AM'")
+        fecha_final = datetime(año, mes, dia, 11, 59, 59).strftime("'%d-%B-%y %H:%M:%S PM'")
+        # st.write(str(contador) + fecha_inicial)
+        # t = {dia: [1, 2, 3, 4], dia + 1: [1, 3, 4, 2]}
+        # x = pan.DataFrame(data=t, index=lista)
+
+        # st.write(ar)
         try:
             conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
             cursor2 = conn.cursor()
@@ -34,28 +38,52 @@ def lamina_lluvia(device_name, dev_eui, fecha_ini, fecha_fin, ciclo):
             '''
             cursor2.execute(sql2)
             data2 = cursor2.fetchall()
-            aumenta = aumenta + 1
+            for dispositivo in data2:
+                data_list = list(dispositivo)
+                if data_list[0] is None:
+                    print("")
+                else:
+                    lluvia = data_list[0]
+                    total = total + lluvia
+
         except cx_Oracle.Error as error:
             print(error)
+        contador = contador + 1
+        ar.append(total)
+        dia = dia + 1
+        total = 0
+        # st.write(ar)
 
-    # st.write(fecha_inicial + " " + fecha_final)
-    # print("")
+    # st.write(ar)
+    return ar
 
 
-def dispositivos(fecha_ini, fecha_fin, ciclo):
+def dispositivos(fecha_ini, fecha_fin, ini_ciclo ,ciclo):
     f = fecha_ini
     f2 = fecha_fin
     c = ciclo
+    ic = ini_ciclo
     try:
         conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
         cursor = conn.cursor()
-        sql = '''
-             select device_name, dev_eui 
+        cursor2 = conn.cursor()
+        sql2 = '''
+             select device_name 
              from SDEUSR.DATA_SENSORBASE_IMSA 
              where application_id = 2 order by device_name asc
         '''
+        sql = '''
+                     select device_name, dev_eui 
+                     from SDEUSR.DATA_SENSORBASE_IMSA 
+                     where application_id = 2 order by device_name asc
+                '''
         cursor.execute(sql)
+        cursor2.execute(sql2)
+        data2 = cursor2.fetchall()
         data = cursor.fetchall()
+        # st.write(data)
+
+        df = pan.DataFrame(index=('%d' % i for i in range(ic, ciclo+1)))
         for dispositivo in data:
             data_list = list(dispositivo)  # --> se almacena los datos en una lista
 
@@ -68,8 +96,19 @@ def dispositivos(fecha_ini, fecha_fin, ciclo):
                     # print("device_name: " + data_list[0] + " dev_eui " + data_list[1])
                     dvn = data_list[0]  # --> se almacena el nombre del device
                     dve = data_list[1]  # --> se almacena el dev_eui
-                    # lamina_lluvia(str(dvn), str(dve), f, f2, c)  # --> ejecuta la funcion Query line 6
-        lamina_lluvia('str(dvn)', 'str(dve)', f, f2, c)
+                    # ar = []
+                    # ar.append(data_list[0])
+                    # st.write(ar[5])
+                    # ar = lamina_lluvia(str(dvn), str(dve), f, c)  # --> ejecuta la funcion Query line 6
+                    # device_name = str(dvn)
+                    # df[device_name] = ar
+        ar = lamina_lluvia('str(dvn)', '0A34AE2A93B6B2EB', f, c)
+        device_name = '12-001'
+        df[device_name] = ar
+        newdf = df.transpose()
+        st.dataframe(newdf)
+        st.line_chart(ar)
+        # st.write(ar)
     except cx_Oracle.Error as error:
         print(error)
         conn.close()
@@ -81,11 +120,12 @@ def dibujarTabla():
 
 
 def main():
-    with st.sidebar:
-        add_radio = st.radio(
-            "Choose a shipping method",
-            ("Standard (5-15 days)", "Express (2-5 days)")
-        )
+    # with st.sidebar:
+    #   add_radio = st.radio(
+    #     "Choose a shipping method",
+    #   ("Standard (5-15 days)", "Express (2-5 days)")
+    # )
+
     # fecha_text = '<p style="font-family:sans-serif; color:Green; font-size: 42px;">Ingrese Fecha</p>'
     # st.markdown(fecha_text, unsafe_allow_html=True)
     st.title('Lamina de agua ' + str(datetime.now().strftime(" %Y")))
@@ -94,7 +134,7 @@ def main():
     # fecha_ini = d.strftime("'%d-%B-%y 12:00:00 AM'")
     # fecha_fin = d2.strftime("'%d-%B-%y 11:59:59 PM'")
     ciclo = d2.strftime("%d")
-
-    dispositivos(d, d2, int(ciclo))
+    ini_ciclo = d.strftime("%d")
+    dispositivos(d, d2,int(ini_ciclo), int(ciclo))
     # st.write('inicial: ', fecha_ini)
     # st.write('Final: ', fecha_fin)
