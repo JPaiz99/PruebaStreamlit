@@ -58,7 +58,7 @@ def lamina_lluvia(dev_eui, fecha_ini, ciclo):
     return ar
 
 
-def dispositivos(fecha_ini, fecha_fin, ini_ciclo, ciclo):
+def laminaLluviaTodos(fecha_ini, fecha_fin, ini_ciclo, ciclo):
     f = fecha_ini
     f2 = fecha_fin
     c = ciclo
@@ -86,30 +86,23 @@ def dispositivos(fecha_ini, fecha_fin, ini_ciclo, ciclo):
                 if data_list[0] == '12-251':  # --> condicional que detecta el pluv 251
                     print('')
                 else:
-                    # print("device_name: " + data_list[0] + " dev_eui " + data_list[1])
                     dvn = data_list[0]  # --> se almacena el nombre del device
                     dve = data_list[1]  # --> se almacena el dev_eui
-                    # ar = []
-                    # ar.append(data_list[0])
-                    # st.write(ar[5])
-                    # ar = lamina_lluvia(str(dvn), str(dve), f, c)  # --> ejecuta la funcion Query line 6
-                    # device_name = str(dvn)
-                    # df[device_name] = ar
+                    ar = lamina_lluvia(str(dve), f, c)  # --> ejecuta la funcion Query line 6
+                    df[str(dvn)] = ar
 
-                    # st.write('You selected:', options)
-
-        ar = lamina_lluvia('0A34AE2A93B6B2EB', f, c)
-        device_name = '12-001'
-        df[device_name] = ar
+        # ar = lamina_lluvia('0A34AE2A93B6B2EB', f, c)
+        # device_name = '12-001'
+        # df[device_name] = ar
         newdf = df.transpose()
         st.dataframe(newdf)
-        st.line_chart(ar)
-        csv = convert_df(df)
+        # st.line_chart(df)
+        csv = convert_df(newdf)
 
         st.download_button(
             label="Descargar como CSV",
             data=csv,
-            file_name='lamina ' + str(f.strftime("%B %Y")) + '.csv',
+            file_name='lamina de lluvia de ' + f.strftime('%d-%b-%Y') + ' a ' + f2.strftime('%d-%b-%Y') + '.csv',
             mime='text/csv',
         )
         # st.write(ar)
@@ -125,7 +118,7 @@ def convert_df(df):
     return df.to_csv().encode('utf-8')
 
 
-def lluvialam(dvn, fecha_ini, fecha_fin, ini_ciclo, ciclo):
+def laminaLluviaEspecificos(dvn, fecha_ini, fecha_fin, ini_ciclo, ciclo):
     f = fecha_ini
     f2 = fecha_fin
     c = ciclo
@@ -148,22 +141,14 @@ def lluvialam(dvn, fecha_ini, fecha_fin, ini_ciclo, ciclo):
             for dispositivo in data:
                 data_list = list(dispositivo)  # --> se almacena los datos en una lista
                 dve = data_list[0]  # --> se almacena el dev_eui
-                str
-                # ar = []
-                # ar.append(data_list[0])
-                # st.write(ar[5])
                 ar = lamina_lluvia(str(dve), f, c)  # --> ejecuta la funcion Query line 6
                 df[str(dev)] = ar
-
-                # st.write('You selected:', options)
-
         # ar = lamina_lluvia('0A34AE2A93B6B2EB', f, c)
         # device_name = '12-001'
         # df[str(dev)] = ar
         newdf = df.transpose()
         st.dataframe(newdf)
         st.line_chart(df)
-        # st.bar_chart(df)
         csv = convert_df(newdf)
         st.download_button(
             label="Descargar como CSV",
@@ -237,13 +222,14 @@ def main():
         options = st.multiselect('Seleccione Pluviometros', dvn2, key='msl')
         if st.button('Aceptar'):
             with st.spinner('Cargando...'):
-                lluvialam(options, d, d2, int(ini_ciclo), int(ciclo))
+                laminaLluviaEspecificos(options, d, d2, int(ini_ciclo), int(ciclo))
             # st.balloons()
 
     else:
         if st.button('Aceptar'):
             with st.spinner('Cargando...'):
-                dispositivos(d, d2, int(ini_ciclo), int(ciclo))
+                st.info('RECUERDA QUE ENTRE MAYOR SEA EL NUMERO DE DISPOSITIVOS MAYOR SERA EL TIEMPO DE ESPERA')
+                laminaLluviaTodos(d, d2, int(ini_ciclo), int(ciclo))
             # st.balloons()
 
     # dispositivos(d, d2,int(ini_ciclo), int(ciclo))
