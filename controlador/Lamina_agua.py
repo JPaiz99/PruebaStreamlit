@@ -205,6 +205,8 @@ def main():
     #     "Choose a shipping method",
     #   ("Standard (5-15 days)", "Express (2-5 days)")
     # )
+    # image = Image.open(" recursos\logo-magdalena.png")
+    # st.set_page_config(page_title="Lamina Agua IMSA", page_icon=image)
 
     # fecha_text = '<p style="font-family:sans-serif; color:Green; font-size: 42px;">Ingrese Fecha</p>'
     # st.markdown(fecha_text, unsafe_allow_html=True)
