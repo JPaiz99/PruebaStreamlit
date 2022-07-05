@@ -9,6 +9,7 @@ import recursos.oracledb as dbu
 import pandas as pan
 import streamlit as st
 import numpy as np
+import controlador.promedioPaquetes as pp
 
 
 def lamina_lluvia(dev_eui, fecha_ini, ciclo):
@@ -25,7 +26,7 @@ def lamina_lluvia(dev_eui, fecha_ini, ciclo):
         # st.write(str(contador) + fecha_inicial)
         # t = {dia: [1, 2, 3, 4], dia + 1: [1, 3, 4, 2]}
         # x = pan.DataFrame(data=t, index=lista)
-
+        # st.write(fecha_inicial)
         # st.write(ar)
         try:
             conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
@@ -33,8 +34,8 @@ def lamina_lluvia(dev_eui, fecha_ini, ciclo):
 
             sql2 = '''
                SELECT data_lluvia FROM SDEUSR.data_pluviometros_lluvia_imsa
-                where  fk_dev_eui =''' + "'" + dev_eui + "'" + ''' and data_lluvia !=0
-                and  fecha_cap between ''' + fecha_inicial + '''  and ''' + fecha_final + '''
+                where fk_dev_eui =''' + "'" + dev_eui + "'" + ''' and data_lluvia !=0
+                and fecha_cap between ''' + fecha_inicial + ''' and ''' + fecha_final + '''
             '''
             cursor2.execute(sql2)
             data2 = cursor2.fetchall()
@@ -200,39 +201,49 @@ def obtenerDvn():
 # device = []
 
 def main():
-    # with st.sidebar:
-    #   add_radio = st.radio(
-    #     "Choose a shipping method",
-    #   ("Standard (5-15 days)", "Express (2-5 days)")
-    # )
-    # image = Image.open(" recursos\logo-magdalena.png")
-    # st.set_page_config(page_title="Lamina Agua IMSA", page_icon=image)
+    st.title('Reportes' + str(datetime.now().strftime(" %Y")))
+    opcion = st.radio('Seleccione reporte', ('Seleccione', 'Paquetes Pluviometros', 'Lamina de agua'))
+    if opcion == 'Lamina de agua':
+        d = st.date_input(label="INGRESE FECHA INICIAL", key="fecha_ini")
+        d2 = st.date_input(label="INGRESE FECHA FINAL", key="fecha_fin")
+        ciclo = d2.strftime("%d")
+        ini_ciclo = d.strftime("%d")
+        ch = st.radio("Escoja", ('todos', 'algunos'))
+        if ch == 'algunos':
+            dvn2 = obtenerDvn()
+            options = st.multiselect('Seleccione Pluviometros', dvn2, key='msl')
+            if st.button('Lamina Aceptar'):
+                with st.spinner('Cargando...'):
+                    laminaLluviaEspecificos(options, d, d2, int(ini_ciclo), int(ciclo))
+                # st.balloons()
 
-    # fecha_text = '<p style="font-family:sans-serif; color:Green; font-size: 42px;">Ingrese Fecha</p>'
-    # st.markdown(fecha_text, unsafe_allow_html=True)
-    st.title('Lamina de agua ' + str(datetime.now().strftime(" %Y")))
-    d = st.date_input(label="INGRESE FECHA INICIAL", key="fecha_ini")
-    d2 = st.date_input(label="INGRESE FECHA FINAL", key="fecha_fin")
-    # fecha_ini = d.strftime("'%d-%B-%y 12:00:00 AM'")
-    # fecha_fin = d2.strftime("'%d-%B-%y 11:59:59 PM'")
-    ciclo = d2.strftime("%d")
-    ini_ciclo = d.strftime("%d")
-    ch = st.radio("Escoja", ('todos', 'algunos'))
+        else:
+            if st.button('Aceptar'):
+                with st.spinner('Cargando...'):
+                    st.info('RECUERDA QUE ENTRE MAYOR SEA EL NUMERO DE DISPOSITIVOS MAYOR SERA EL TIEMPO DE ESPERA')
+                    laminaLluviaTodos(d, d2, int(ini_ciclo), int(ciclo))
+                # st.balloons()
+    elif opcion == 'Paquetes Pluviometros':
+        d = st.date_input(label="INGRESE FECHA INICIAL", key="fecha_ini")
+        d2 = st.date_input(label="INGRESE FECHA FINAL", key="fecha_fin")
+        ciclo = d2.strftime("%d")
+        ini_ciclo = d.strftime("%d")
+        ch = st.radio("Escoja", ('todos', 'algunos'))
+        if ch == 'algunos':
+            dvn2 = obtenerDvn()
+            options = st.multiselect('Seleccione Pluviometros', dvn2, key='msl')
+            if st.button('Aceptar'):
+                with st.spinner('Cargando...'):
+                    pp.paquetes_promedio(options, d.day, d.month, d.year, d2.day )
+                    # laminaLluviaEspecificos(options, d, d2, int(ini_ciclo), int(ciclo))
+                # st.balloons()
 
-    if ch == 'algunos':
-        dvn2 = obtenerDvn()
-        options = st.multiselect('Seleccione Pluviometros', dvn2, key='msl')
-        if st.button('Aceptar'):
-            with st.spinner('Cargando...'):
-                laminaLluviaEspecificos(options, d, d2, int(ini_ciclo), int(ciclo))
-            # st.balloons()
-
-    else:
-        if st.button('Aceptar'):
-            with st.spinner('Cargando...'):
-                st.info('RECUERDA QUE ENTRE MAYOR SEA EL NUMERO DE DISPOSITIVOS MAYOR SERA EL TIEMPO DE ESPERA')
-                laminaLluviaTodos(d, d2, int(ini_ciclo), int(ciclo))
-            # st.balloons()
+        else:
+            if st.button('Aceptar'):
+                with st.spinner('Cargando...'):
+                    st.info('RECUERDA QUE ENTRE MAYOR SEA EL NUMERO DE DISPOSITIVOS MAYOR SERA EL TIEMPO DE ESPERA')
+                    # laminaLluviaTodos(d, d2, int(ini_ciclo), int(ciclo))
+                # st.balloons()
 
     # dispositivos(d, d2,int(ini_ciclo), int(ciclo))
 

@@ -1,5 +1,6 @@
 import controlador.stream as st
 import controlador.Lamina_agua as la
+import controlador.promedioPaquetes as pp
 import streamlit as st
 from PIL import Image
 
