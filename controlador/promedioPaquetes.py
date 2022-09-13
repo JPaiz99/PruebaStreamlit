@@ -26,6 +26,9 @@ def paquetes_promedio(dve, dia, mes, año, ciclo):
         conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
         cursor = conn.cursor()
         cursor2 = conn.cursor()
+        cursorol= conn.cursor()
+        sqlrol = '''set role all'''
+        cursorol.execute(sqlrol)
         for dv in dve:
             sql = '''
                    select dev_eui 
