@@ -237,6 +237,7 @@ def lluvia_min(dvn, dia, mes, año, ciclo):
 def obtenerDvn():
     dvn = []
     try:
+
         # cx_Oracle.init_oracle_client(lib_dir=r"C:\users\hpaiz\Documents\oracliente\instantclient_21_6")
         conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
         cursor = conn.cursor()
