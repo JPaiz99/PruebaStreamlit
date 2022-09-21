@@ -111,7 +111,7 @@ def laminaLluviaTodos(fecha_ini, fecha_fin, ini_ciclo, ciclo):
         print(error)
         st.error('Error al ejecutar la consulta')
         conn.close()
-    conn.close()
+
 
 
 def convert_df(df):
@@ -165,18 +165,18 @@ def laminaLluviaEspecificos(dvn, fecha_ini, fecha_fin, ini_ciclo, ciclo):
     conn.close()
 
 
-def lluvia_min(dvn, dia, mes, año, ciclo):
+def lluvia_min(dvn, dia, mes, año, conn):
     d = dia
     fecha_inicial = datetime(año, mes, d, 12, 00, 00).strftime("'%d-%B-%y %H:%M:%S AM'")
     # st.write(fecha_inicial)
     fecha_final = datetime(año, mes, d, 11, 59, 59).strftime("'%d-%B-%y %H:%M:%S PM'")
-    c = ciclo
+    # c = ciclo
     # ic = ini_ciclo
     dve = []
     lluvia = []
     fecha = []
     try:
-        conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
+        # conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
         cursor = conn.cursor()
         cursor2 = conn.cursor()
         curol = conn.cursor()
@@ -195,27 +195,30 @@ def lluvia_min(dvn, dia, mes, año, ciclo):
             # st.write(data)
             for dispositivo in data:
                 data_list = list(dispositivo)  # --> se almacena los datos en una lista
-                while dia <= ciclo:
-                    sqlrol2 = '''set role all'''
-                    sql2 = '''
-                    SELECT data_lluvia,  fecha_cap FROM SDEUSR.data_pluviometros_lluvia_imsa
-                        where fk_dev_eui =''' + "'" + data_list[0] + "'" + ''' 
-                        and fecha_cap between ''' + fecha_inicial + ''' and ''' + fecha_final + ''' ORDER by fecha_cap asc
-                    '''
-                    # st.write(sql2)
-                    cursor2.execute(sqlrol2)
-                    cursor2.execute(sql2)
-                    for data2 in cursor2.fetchall():
-                        data_list2 = list(data2)
-                        lluvia_data = data_list2[0]
-                        fecha_data = data_list2[1]
-                        lluvia.append(lluvia_data)
-                        fecha.append(fecha_data.strftime("%d/%m/%y %H:%M:%S:%f"))
-                    dia = dia + 1
-        st.write(data_list[0])
-        st.write(dev)
+                # while dia <= ciclo:
+                sqlrol2 = '''set role all'''
+                sql2 = '''
+                SELECT data_lluvia,  fecha_cap FROM SDEUSR.data_pluviometros_lluvia_imsa
+                    where fk_dev_eui =''' + "'" + data_list[0] + "'" + ''' 
+                    and fecha_cap between ''' + fecha_inicial + ''' and ''' + fecha_final + ''' ORDER by fecha_cap asc
+                '''
+                # st.write(sql2)
+                cursor2.execute(sqlrol2)
+                cursor2.execute(sql2)
+                data2 = cursor2.fetchall()
+                # st.write(data2)
+                for dat in data2:
+                    data_list2 = list(dat)
+                    lluvia_data = data_list2[0]
+                    fecha_data = data_list2[1]
+                    lluvia.append(lluvia_data)
+                    fecha.append(fecha_data.strftime("%d/%m/%y %H:%M:%S:%f"))
+                dia = dia + 1
+
+        # st.write(lluvia)
+        # st.write(dev)
         # st.write(dia)
-        df = pan.DataFrame(data=lluvia, index=fecha)
+        df = pan.DataFrame(data=lluvia, index=fecha, columns=dvn)
         newdf = df.transpose()
         st.dataframe(newdf)
         # st.line_chart(df)
@@ -231,15 +234,12 @@ def lluvia_min(dvn, dia, mes, año, ciclo):
         print(error)
         st.error('Error al ejecutar la consulta')
         conn.close()
-    conn.close()
 
 
-def obtenerDvn():
+
+def obtenerDvn(conn):
     dvn = []
     try:
-
-        # cx_Oracle.init_oracle_client(lib_dir=r"C:\users\hpaiz\Documents\oracliente\instantclient_21_6")
-        conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
         cursor = conn.cursor()
         cursorol = conn.cursor()
         sqlrol = '''set role all'''
@@ -291,11 +291,13 @@ def main():
                     laminaLluviaEspecificos(options, d, d2, int(ini_ciclo), int(ciclo))
                 # st.balloons()
         elif ch == 'Reporte 10 min':
-            dvn2 = obtenerDvn()
+            conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
+            dvn2 = obtenerDvn(conn)
             options = st.multiselect('Seleccione Pluviometros', dvn2, key='msl')
             if st.button('Lamina Aceptar'):
                 with st.spinner('Cargando...'):
-                    lluvia_min(options, d.day, d.month, d.year, d2.day)
+                    lluvia_min(options, d.day, d.month, d.year, conn)
+                    conn.close()
                 # st.balloons()
         else:
             if st.button('Aceptar'):
@@ -310,7 +312,8 @@ def main():
         # ini_ciclo = d.strftime("%d")
         ch = st.radio("Escoja", ('todos', 'algunos'))
         if ch == 'algunos':
-            dvn2 = obtenerDvn()
+            conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
+            dvn2 = obtenerDvn(conn)
             options = st.multiselect('Seleccione Pluviometros', dvn2, key='msl')
             if st.button('Aceptar'):
                 with st.spinner('Cargando...'):
@@ -323,6 +326,7 @@ def main():
                 with st.spinner('Cargando...'):
                     st.info('RECUERDA QUE ENTRE MAYOR SEA EL NUMERO DE DISPOSITIVOS MAYOR SERA EL TIEMPO DE ESPERA')
                     # laminaLluviaTodos(d, d2, int(ini_ciclo), int(ciclo))
+                    pp.paquetes_promedio_todos(d.day, d.month, d.year, d2.day)
                 # st.balloons()
 
     elif opcion == 'Lamina de agua x dia':

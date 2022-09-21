@@ -26,7 +26,7 @@ def paquetes_promedio(dve, dia, mes, año, ciclo):
         conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
         cursor = conn.cursor()
         cursor2 = conn.cursor()
-        cursorol= conn.cursor()
+        cursorol = conn.cursor()
         sqlrol = '''set role all'''
         cursorol.execute(sqlrol)
         for dv in dve:
@@ -44,7 +44,7 @@ def paquetes_promedio(dve, dia, mes, año, ciclo):
             for dispositivo in data:
                 data_list = list(dispositivo)  # --> se almacena los datos en una lista
                 dven = data_list[0]  # --> se almacena el dev_eui
-                while d<=ciclo:
+                while d <= ciclo:
                     f3 = datetime(a, m, d).strftime("%d/%m/%Y")
                     f = datetime(a, m, d, 12, 00, 00).strftime("'%d-%B-%y " + hi + "'")
                     f2 = datetime(a, m, d, 12, 00, 00).strftime("'%d-%B-%y " + hf + "'")
@@ -78,5 +78,75 @@ def paquetes_promedio(dve, dia, mes, año, ciclo):
         cursor.close()
         conn.close()
     except cx_Oracle.Error as error:
+        print(error)
 
+
+def paquetes_promedio_todos(dia, mes, año, ciclo):
+    # d = dia
+    total = 0
+    d = dia
+    m = mes
+    a = año
+    hi = "12:00:00 AM"
+    hf = "11:59:59 PM"
+    ar = []
+    # df = pan.DataFrame(index=('%d' % i for i in range(dia, ciclo + 1)))
+    df = pan.DataFrame()
+    try:
+        conn = cx_Oracle.connect(user=dbu.usuario, password=dbu.contraseña, dsn=dbu.dsn)
+        cursor = conn.cursor()
+        cursor2 = conn.cursor()
+        cursorol = conn.cursor()
+        sqlrol = '''set role all'''
+        cursorol.execute(sqlrol)
+        # for dv in dve:
+        sql = '''SELECT device_name, dev_eui FROM SDEUSR.DATA_SENSORBASE_IMSA where application_id = 2 and 
+        device_name!='12-250' and device_name!='12-251' and device_name !='12-000' ORDER by device_name ASC '''
+
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        # st.write(data)
+        # while d <= ciclo
+
+        for dispositivo in data:
+            data_list = list(dispositivo)  # --> se almacena los datos en una lista
+            dven = data_list[1]  # --> se almacena el dev_eui
+            while d <= ciclo:
+                # f3 = datetime(a, m, d).strftime("%d/%m/%Y")
+                f = datetime(a, m, d, 12, 00, 00).strftime("'%d-%B-%y " + hi + "'")
+                f2 = datetime(a, m, d, 12, 00, 00).strftime("'%d-%B-%y " + hf + "'")
+                sql2 = '''
+                select fecha_cap
+                    from SDEUSR.data_pluviometros_lluvia_imsa 
+                    where fecha_cap between ''' + f + ''' and ''' + f2 + ''' 
+                    and fk_dev_eui=''' + "'" + dven + "'" + ''' GROUP BY fk_dev_eui, fecha_cap
+                    order by fecha_cap desc
+                '''
+                cursor2.execute(sql2)
+                data2 = cursor2.fetchall()
+                total = total + len(data2)
+                # ar.append(total)
+                d = d + 1
+            total = total / ciclo
+            # st.write(total)
+            if total > 100:
+                ar.append(int(total))
+                df[str(data_list[0])] = ar
+            d = dia
+            ar = []
+            total = 0
+        newdf = df.transpose()
+        st.dataframe(newdf)
+        # st.bar_chart(df)
+        csv = convert_df(newdf)
+        st.download_button(
+            label="Descargar como CSV",
+            data=csv,
+            file_name='Consulta Paquetes.csv',
+            mime='text/csv',
+        )
+
+        cursor.close()
+        conn.close()
+    except cx_Oracle.Error as error:
         print(error)
